@@ -3,7 +3,7 @@ import scipy.sparse as sp
 import torch
 import torch.nn as nn
 from utils import sparse_mx_to_torch_sparse_tensor
-from node.dataset import load
+from dataset import load
 
 
 # Borrowed from https://github.com/PetarV-/DGI
@@ -30,11 +30,11 @@ class GCN(nn.Module):
 
     # Shape of seq: (batch, nodes, features)
     def forward(self, seq, adj, sparse=False):
-        seq_fts = self.fc(seq)
+        seq_fts = self.fc(seq)             # X * theta
         if sparse:
             out = torch.unsqueeze(torch.spmm(adj, torch.squeeze(seq_fts, 0)), 0)
         else:
-            out = torch.bmm(adj, seq_fts)
+            out = torch.bmm(adj, seq_fts)  # A * X * theta
         if self.bias is not None:
             out += self.bias
         return self.act(out)
@@ -69,13 +69,14 @@ class Discriminator(nn.Module):
                 m.bias.data.fill_(0.0)
 
     def forward(self, c1, c2, h1, h2, h3, h4, s_bias1=None, s_bias2=None):
+        #
         c_x1 = torch.unsqueeze(c1, 1)
         c_x1 = c_x1.expand_as(h1).contiguous()
         c_x2 = torch.unsqueeze(c2, 1)
         c_x2 = c_x2.expand_as(h2).contiguous()
 
         # positive
-        sc_1 = torch.squeeze(self.f_k(h2, c_x1), 2)
+        sc_1 = torch.squeeze(self.f_k(h2, c_x1), 2)   # 2-layer MLP
         sc_2 = torch.squeeze(self.f_k(h1, c_x2), 2)
 
         # negetive
@@ -99,7 +100,7 @@ class Model(nn.Module):
 
     def forward(self, seq1, seq2, adj, diff, sparse, msk, samp_bias1, samp_bias2):
         h_1 = self.gcn1(seq1, adj, sparse)
-        c_1 = self.read(h_1, msk)
+        c_1 = self.read(h_1, msk)         # graph pooling (readout) function
         c_1 = self.sigm(c_1)
 
         h_2 = self.gcn2(seq1, diff, sparse)
@@ -155,7 +156,7 @@ def train(dataset, verbose=False):
     ft_size = features.shape[1]
     nb_classes = np.unique(labels).shape[0]
 
-    sample_size = 2000
+    sample_size = 2000      # number of sampled nodes
     batch_size = 4
 
     labels = torch.LongTensor(labels)
@@ -184,7 +185,7 @@ def train(dataset, verbose=False):
 
     for epoch in range(nb_epochs):
 
-        idx = np.random.randint(0, adj.shape[-1] - sample_size + 1, batch_size)
+        idx = np.random.randint(0, adj.shape[-1] - sample_size + 1, batch_size)  # [4] (0, N)
         ba, bd, bf = [], [], []
         for i in idx:
             ba.append(adj[i: i + sample_size, i: i + sample_size])
@@ -203,7 +204,7 @@ def train(dataset, verbose=False):
             bd = torch.FloatTensor(bd)
 
         bf = torch.FloatTensor(bf)
-        idx = np.random.permutation(sample_size)
+        idx = np.random.permutation(sample_size)  # a permutated sequence for negative samples
         shuf_fts = bf[:, idx, :]
 
         if torch.cuda.is_available():
@@ -284,14 +285,18 @@ def train(dataset, verbose=False):
 
     accs = torch.stack(accs)
     print(accs.mean().item(), accs.std().item())
-
+    # return accs.mean().item(), accs.std().item()
 
 if __name__ == '__main__':
     import warnings
     warnings.filterwarnings("ignore")
-    torch.cuda.set_device(3)
+    torch.cuda.set_device(7)
 
     # 'cora', 'citeseer', 'pubmed'
     dataset = 'cora'
+    # final_acc = []
     for __ in range(50):
+        # accs, _ = \
         train(dataset)
+        # final_acc.append(accs)
+    # print(np.mean(final_acc), np.var(final_acc))

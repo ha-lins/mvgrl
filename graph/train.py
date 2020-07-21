@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
-from graph.dataset import load
+from dataset import load
 
 
 class GCNLayer(nn.Module):
@@ -329,7 +329,7 @@ if __name__ == '__main__':
     layers = [2, 8, 12]
     batch = [32, 64, 128, 256]
     epoch = [20, 40, 100]
-    ds = ['MUTAG', 'PTC_MR', 'IMDB-BINARY', 'IMDB-MULTI', 'REDDIT-BINARY', 'REDDIT-MULTI-5K']
+    ds = [ 'IMDB-MULTI', 'REDDIT-BINARY'] #'MUTAG', 'PTC_MR', 'IMDB-BINARY', 'REDDIT-MULTI-5K'
     seeds = [123, 132, 321, 312, 231]
     for d in ds:
         print(f'####################{d}####################')
