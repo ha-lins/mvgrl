@@ -140,7 +140,7 @@ def load(dataset):
     max_nodes = max([a.shape[0] for a in adj])
     feat_dim = feat[0].shape[-1]
 
-    num_nodes = []
+    num_nodes = [] # graph_nums * node_nums
 
     for idx in range(adj.shape[0]):
 

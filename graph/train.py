@@ -75,6 +75,7 @@ class Model(nn.Module):
     def __init__(self, n_in, n_h, num_layers):
         super(Model, self).__init__()
         self.mlp1 = MLP(1 * n_h, n_h)
+        self.mlp11 = MLP(1 * n_h, n_h)
         self.mlp2 = MLP(num_layers * n_h, n_h)
         self.gnn1 = GCN(n_in, n_h, num_layers)
         self.gnn2 = GCN(n_in, n_h, num_layers)
@@ -85,6 +86,9 @@ class Model(nn.Module):
 
         lv1 = self.mlp1(lv1)
         lv2 = self.mlp1(lv2)
+
+        lv1 = self.mlp11(lv1)
+        lv2 = self.mlp11(lv2)
 
         gv1 = self.mlp2(gv1)
         gv2 = self.mlp2(gv2)
@@ -190,7 +194,7 @@ def local_global_loss_(l_enc, g_enc, batch, measure, mask):
         msk[idx * max_nodes + m: idx * max_nodes + max_nodes, idx] = 0.
 
     res = torch.mm(l_enc, g_enc.t()) * msk
-
+    # num_nodes x num_graphs
     E_pos = get_positive_expectation(res * pos_mask, measure, average=False).sum()
     E_pos = E_pos / num_nodes
     E_neg = get_negative_expectation(res * neg_mask, measure, average=False).sum()
@@ -329,7 +333,7 @@ if __name__ == '__main__':
     layers = [2, 8, 12]
     batch = [32, 64, 128, 256]
     epoch = [20, 40, 100]
-    ds = [ 'IMDB-MULTI', 'REDDIT-BINARY'] #'MUTAG', 'PTC_MR', 'IMDB-BINARY', 'REDDIT-MULTI-5K'
+    ds = [ 'MUTAG']#'IMDB-MULTI', 'REDDIT-BINARY', , 'PTC_MR', 'IMDB-BINARY', 'REDDIT-MULTI-5K'
     seeds = [123, 132, 321, 312, 231]
     for d in ds:
         print(f'####################{d}####################')

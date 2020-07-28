@@ -6,7 +6,7 @@ import scipy.sparse as sp
 import networkx as nx
 import numpy as np
 import os
-
+import copy
 
 def download(dataset):
     if dataset == 'cora':
@@ -61,9 +61,11 @@ def load(dataset):
         scaler.fit(diff)
         diff = scaler.transform(diff)
 
+    ori_adj = copy.deepcopy(adj)
+    # print(ori_adj)
     adj = normalize_adj(adj + sp.eye(adj.shape[0])).todense()
 
-    return adj, diff, feat, labels, idx_train, idx_val, idx_test
+    return ori_adj, adj, diff, feat, labels, idx_train, idx_val, idx_test
 
 
 if __name__ == '__main__':
